@@ -1,0 +1,72 @@
+package changelog
+
+import (
+	"context"
+
+	"github.com/artem328/release-clerk/internal/config"
+	"github.com/artem328/release-clerk/internal/pkg/changelog"
+	"github.com/artem328/release-clerk/internal/pkg/commit"
+	"github.com/artem328/release-clerk/internal/pkg/git"
+	"github.com/artem328/release-clerk/internal/version"
+	"github.com/artem328/release-clerk/pkg/semver"
+)
+
+type Config struct {
+	Version semver.Version
+}
+
+func Generate(ctx context.Context, conf config.Config, genConfig Config) (string, error) {
+	repo, err := git.LocateRepo(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return GenerateForRepo(repo, conf, genConfig)
+}
+
+func GenerateForRepo(repo *git.Repo, conf config.Config, genConfig Config) (string, error) {
+	var (
+		current version.Version
+		err     error
+	)
+
+	if genConfig.Version.IsZero() {
+		current, err = version.Last(repo, conf.TagPrefix)
+	} else {
+		current, err = version.Resolve(repo, genConfig.Version, conf.TagPrefix)
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	prev, err := version.Prev(repo, current.SemVer, conf.TagPrefix)
+	if err != nil {
+		return "", err
+	}
+
+	gitCommits, err := repo.GetCommits(git.PathSpec(prev.Commit.FullHash, current.Commit.FullHash))
+	if err != nil {
+		return "", err
+	}
+
+	commits := commit.FromGitCommits(gitCommits)
+
+	sections := make([]changelog.SectionConfig, 0, len(conf.Changelog.Sections))
+	for _, s := range conf.Changelog.Sections {
+		sections = append(sections, changelog.SectionConfig{
+			Type:   s.Type,
+			Name:   s.Name,
+			Hidden: s.Hidden,
+		})
+	}
+
+	cl := changelog.Prepare(current.SemVer, prev.SemVer, commits, changelog.Config{
+		Sections:                 sections,
+		UnmatchedName:            conf.Changelog.UnmatchedSection,
+		AddBreakingChangeSection: true,
+		Date:                     current.Commit.CommiterDate,
+	})
+
+	return changelog.Markdown(cl), nil
+}

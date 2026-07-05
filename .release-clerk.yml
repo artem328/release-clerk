@@ -1,0 +1,28 @@
+branches:
+  - name: master
+
+tagPrefix: v
+disableMajor: true
+
+rules:
+  - type: feat
+    bump: minor
+  - type: fix
+    bump: patch
+  - type: deps
+    bump: patch
+  - type: chore
+    bump: none
+
+changelog:
+  path: CHANGELOG.md
+  unmatchedSection: Other
+  sections:
+    - type: feat
+      name: Features
+    - type: fix
+      name: Fixes
+    - type: deps
+      name: Dependencies
+    - type: chore
+      hidden: true

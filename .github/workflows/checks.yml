@@ -1,0 +1,41 @@
+name: Checks
+on:
+  push:
+    branches:
+      - master
+    tags-ignore:
+      - "v*"
+  pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Init Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Tests
+        run: go test ./...
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Init Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Tests
+        run: go build -o /dev/null .
