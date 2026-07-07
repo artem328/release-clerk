@@ -23,7 +23,7 @@ jobs:
         with:
           go-version: 1.26
       - name: Install release-clerk
-        run: go install github.com/artem328/release-clerk@master
+        run: go install github.com/artem328/release-clerk@19a0cb5b88f1bcd10065608d23ca7a81cffde38f
       - name: Set up git user
         run: |
           git config user.name 'Release Clerk'
