@@ -14,3 +14,5 @@ require (
 	github.com/spf13/pflag v1.0.9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+retract v0.1.0 // unfortunate artifact from the old repo. Valid in this repo, but has critical bugs in cached version
