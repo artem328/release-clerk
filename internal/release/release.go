@@ -23,8 +23,9 @@ import (
 )
 
 type Release struct {
-	Tag     string
-	Version version.Version
+	Released bool
+	Tag      string
+	Version  version.Version
 }
 
 type rule struct {
@@ -72,7 +73,7 @@ func (r rule) Compare(other rule) int {
 	return 1
 }
 
-func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (*Release, error) {
+func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (Release, error) {
 	if dryRun {
 		l.Log("╔════════════════════════════════════════╗")
 		l.Log("║                DRY RUN                 ║")
@@ -83,12 +84,12 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (*R
 
 	repo, err := git.LocateRepo(ctx)
 	if err != nil {
-		return nil, err
+		return Release{}, err
 	}
 
 	branch, err := repo.CurrentBranch()
 	if err != nil {
-		return nil, err
+		return Release{}, err
 	}
 
 	var onAValidBranch bool
@@ -101,12 +102,12 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (*R
 
 	if !onAValidBranch {
 		l.Logf("Branch `%s` is not targeted. Doing nothing", branch)
-		return nil, nil
+		return Release{}, nil
 	}
 
 	lastVersion, err := version.Last(repo, conf.TagPrefix)
 	if err != nil {
-		return nil, err
+		return Release{}, err
 	}
 
 	vlog := l.Section("last-version")
@@ -121,7 +122,7 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (*R
 
 	gitCommits, err := repo.GetCommits(git.PathSpec(lastVersion.Commit.FullHash, "HEAD"))
 	if err != nil {
-		return nil, err
+		return Release{}, err
 	}
 
 	commits := commit.FromGitCommits(gitCommits)
@@ -135,7 +136,7 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (*R
 		clog.Logf("Found %d %s since last version", len(commits), commitNoun)
 	} else {
 		clog.Log("No commits found since last version. Doing nothing")
-		return nil, nil
+		return Release{}, nil
 	}
 
 	rules := make([]rule, 0, len(conf.Rules))
@@ -157,7 +158,7 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (*R
 		nvlog.Logf("  Version: %s", newVersion.String())
 	} else {
 		nvlog.Log("No changes detected for new version. Doing nothing")
-		return nil, nil
+		return Release{}, nil
 	}
 
 	cllog := l.Section("changelog")
@@ -184,7 +185,7 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (*R
 	}
 	if !dryRun {
 		if err := writeChangelog(filename, clData); err != nil {
-			return nil, err
+			return Release{}, err
 		}
 		cllog.Logf("Changelog written to %s", filename)
 	} else {
@@ -200,17 +201,17 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (*R
 	if len(conf.Hooks) > 0 {
 		_, _, err := runHooks(ctx, conf.Hooks, precommit, func(o hookmodel.Output, l log.Logger) hookmodel.Input { return precommit }, l)
 		if err != nil {
-			return nil, err
+			return Release{}, err
 		}
 	}
 
 	commlog := l.Section("commit")
 	if !dryRun {
 		if err := repo.StageChanges(); err != nil {
-			return nil, err
+			return Release{}, err
 		}
 		if err := repo.Commit("chore(release): version " + newVersion.String()); err != nil {
-			return nil, err
+			return Release{}, err
 		}
 		commlog.Log("Changes commited")
 	} else {
@@ -220,7 +221,7 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (*R
 	tlog := l.Section("tag")
 	if !dryRun {
 		if err := repo.AddTag(newTag, "Release "+newVersion.String()); err != nil {
-			return nil, err
+			return Release{}, err
 		}
 		tlog.Log("New version tag is added")
 	} else {
@@ -228,27 +229,30 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (*R
 	}
 
 	plog := l.Section("push")
-	if !dryRun {
+	if conf.DisablePush {
+		plog.Log("Skipping push due to configuration")
+	} else if dryRun {
+		plog.Log("Skipping push due to dry-run")
+	} else {
 		if err := repo.Push(branch); err != nil {
-			return nil, err
+			return Release{}, err
 		}
 		plog.Log("Changes pushed")
-	} else {
-		plog.Log("Skipping push due to dry-run")
 	}
 
 	if dryRun {
-		return nil, nil
+		return Release{}, nil
 	}
 
 	v, err := version.Resolve(repo, newVersion, conf.TagPrefix)
 	if err != nil {
-		return nil, err
+		return Release{}, err
 	}
 
-	return &Release{
-		Tag:     newTag,
-		Version: v,
+	return Release{
+		Released: true,
+		Tag:      newTag,
+		Version:  v,
 	}, nil
 }
 
