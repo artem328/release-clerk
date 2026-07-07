@@ -59,6 +59,7 @@ type Hook struct {
 type Config struct {
 	TagPrefix    string    `yaml:"tagPrefix"`
 	DisableMajor bool      `yaml:"disableMajor"`
+	DisablePush  bool      `yaml:"disablePush"`
 	Branches     []Branch  `yaml:"branches"`
 	Rules        []Rule    `yaml:"rules"`
 	Changelog    Changelog `yaml:"changelog"`

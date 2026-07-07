@@ -33,11 +33,6 @@ var releaseCmd = &cobra.Command{
 
 		switch releaseCmdFlags.Format {
 		case "json":
-			if rel == nil {
-				_, _ = fmt.Fprintln(os.Stdout, "{}")
-				return nil
-			}
-
 			j, err := json.Marshal(rel)
 			if err != nil {
 				return err
@@ -45,13 +40,11 @@ var releaseCmd = &cobra.Command{
 
 			_, _ = fmt.Fprintln(os.Stdout, string(j))
 		case "text":
-			if rel == nil {
-				return nil
+			if rel.Released {
+				_, _ = fmt.Fprintln(os.Stdout, "Tag:    ", rel.Tag)
+				_, _ = fmt.Fprintln(os.Stdout, "Version:", rel.Version.SemVer.String())
+				_, _ = fmt.Fprintln(os.Stdout, "Commit: ", rel.Version.Commit.FullHash)
 			}
-
-			_, _ = fmt.Fprintln(os.Stdout, "Tag:    ", rel.Tag)
-			_, _ = fmt.Fprintln(os.Stdout, "Version:", rel.Version.SemVer.String())
-			_, _ = fmt.Fprintln(os.Stdout, "Commit: ", rel.Version.Commit.FullHash)
 		default:
 			return fmt.Errorf("unknown format: %s", tagFlags.Format)
 		}
