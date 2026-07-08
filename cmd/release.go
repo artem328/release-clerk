@@ -24,7 +24,7 @@ var releaseCmd = &cobra.Command{
 			return err
 		}
 
-		logger := log.NewGenericLogger(os.Stderr, "", true)
+		logger := log.NewGenericLogger(os.Stderr, "", globalFlags.Debug)
 
 		rel, err := release.Run(cmd.Context(), conf, releaseCmdFlags.DryRun, logger)
 		if err != nil {

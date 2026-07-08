@@ -9,6 +9,7 @@ import (
 
 var globalFlags = struct {
 	Config string
+	Debug  bool
 }{}
 
 var rootCmd = &cobra.Command{
@@ -28,6 +29,7 @@ func init() {
 		"",
 		"release-clerk config location. By default trying to find one of .release-clerk.yaml, .release-clerk.yml in working directory",
 	)
+	rootCmd.PersistentFlags().BoolVarP(&globalFlags.Debug, "debug", "d", false, "enable debug logging")
 }
 
 func loadConfig() (config.Config, error) {

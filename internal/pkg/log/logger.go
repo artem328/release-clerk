@@ -57,7 +57,7 @@ func (l GenericLogger) logPrefix(debug bool) {
 		needSpace = true
 	}
 
-	if debug && l.debug {
+	if debug {
 		_, _ = fmt.Fprint(l.out, "[debug]")
 		needSpace = true
 	}
@@ -68,6 +68,10 @@ func (l GenericLogger) logPrefix(debug bool) {
 }
 
 func (l GenericLogger) log(args []any, debug bool) {
+	if debug && !l.debug {
+		return
+	}
+
 	l.logPrefix(debug)
 
 	_, _ = fmt.Fprint(l.out, args...)
@@ -75,6 +79,10 @@ func (l GenericLogger) log(args []any, debug bool) {
 }
 
 func (l GenericLogger) logf(format string, args []any, debug bool) {
+	if debug && !l.debug {
+		return
+	}
+
 	l.logPrefix(debug)
 
 	_, _ = fmt.Fprintf(l.out, format, args...)
