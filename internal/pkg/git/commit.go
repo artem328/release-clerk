@@ -17,6 +17,7 @@ type Commit struct {
 	CommiterDate  time.Time
 	CommiterName  string
 	CommiterEmail string
+	Parents       []string
 	Body          string
 }
 
@@ -32,6 +33,7 @@ const (
 	commitFormatCommiterDate  = "%cI"
 	commitFormatCommiterName  = "%cn"
 	commitFormatCommiterEmail = "%ce"
+	commitFormatParents       = "%P"
 	commitFormatBody          = "%B"
 )
 
@@ -49,6 +51,7 @@ var commitFormat = [...]string{
 	commitFormatCommiterDate,
 	commitFormatCommiterName,
 	commitFormatCommiterEmail,
+	commitFormatParents,
 	commitFormatBody,
 }
 
@@ -147,6 +150,8 @@ func (r *Repo) parseCommit(commit []byte) (Commit, error) {
 			c.CommiterName = string(data[i])
 		case commitFormatCommiterEmail:
 			c.CommiterEmail = string(data[i])
+		case commitFormatParents:
+			c.Parents = strings.Split(string(data[i]), " ")
 		case commitFormatBody:
 			c.Body = string(data[i])
 		default:

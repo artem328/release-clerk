@@ -127,6 +127,20 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (Re
 
 	commits := commit.FromGitCommits(gitCommits)
 
+	if !conf.IncludeMergeCommits {
+		var i, j int
+
+		for i = 0; i < len(commits); i++ {
+			if len(commits[i].Git.Parents) > 1 {
+				continue
+			}
+
+			commits[j] = commits[i]
+			j++
+		}
+		commits = commits[:j]
+	}
+
 	clog := l.Section("commits")
 	if len(commits) > 0 {
 		commitNoun := "commit"
