@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 0.4.0 (2026-07-08)
+
+### BREAKING CHANGE
+
+* ! **hook**: added commit transform hook (ee04a45)
+
+### Features
+
+* **lint**: added lint command (4b76a16)
+* **config**: added merge commit exclusion option (ae8050c)
+* **release**: added disable push flag to release command (bb899b0)
+* **global**: added debug flag (c8a098e)
+
 ## 0.3.0 (2026-07-08)
 
 ### BREAKING CHANGE
