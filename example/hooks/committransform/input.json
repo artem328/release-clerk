@@ -1,0 +1,63 @@
+{
+  "Type": "commit_transform",
+  "Payload": {
+    "Commits": [
+      {
+        "FullHash": "fc7eae6e56385f8b86cee20b21033f8391f8a0b8",
+        "ShortHash": "fc7eae6",
+        "AuthorDate": "2026-07-08T18:32:36+07:00",
+        "AuthorName": "Artem Vozhzhov",
+        "AuthorEmail": "vojjov.artem@ya.ru",
+        "CommiterDate": "2026-07-08T18:32:36+07:00",
+        "CommiterName": "Artem Vozhzhov",
+        "CommiterEmail": "vojjov.artem@ya.ru",
+        "Parents": [
+          "9c1904941c557eeb7dfa56d0984b2fe160239022"
+        ],
+        "Body": "feat: added merge commit exclusion option\n"
+      },
+      {
+        "FullHash": "9c1904941c557eeb7dfa56d0984b2fe160239022",
+        "ShortHash": "9c19049",
+        "AuthorDate": "2026-07-08T18:15:07+07:00",
+        "AuthorName": "Artem Vozhzhov",
+        "AuthorEmail": "vojjov.artem@ya.ru",
+        "CommiterDate": "2026-07-08T18:15:07+07:00",
+        "CommiterName": "Artem Vozhzhov",
+        "CommiterEmail": "vojjov.artem@ya.ru",
+        "Parents": [
+          "717d39daaf44896cf64bf6a5165aadedada81b10"
+        ],
+        "Body": "feat: added disable push flag to release command\n\nexplicit `--disable-push` flag takes precedence over file configuration\n"
+      },
+      {
+        "FullHash": "717d39daaf44896cf64bf6a5165aadedada81b10",
+        "ShortHash": "717d39d",
+        "AuthorDate": "2026-07-08T18:12:06+07:00",
+        "AuthorName": "Artem Vozhzhov",
+        "AuthorEmail": "vojjov.artem@ya.ru",
+        "CommiterDate": "2026-07-08T18:12:06+07:00",
+        "CommiterName": "Artem Vozhzhov",
+        "CommiterEmail": "vojjov.artem@ya.ru",
+        "Parents": [
+          "b39bd7cff798244847e5a3c8b99edc413acde0ec"
+        ],
+        "Body": "feat: added debug flag\n"
+      },
+      {
+        "FullHash": "b39bd7cff798244847e5a3c8b99edc413acde0ec",
+        "ShortHash": "b39bd7c",
+        "AuthorDate": "2026-07-08T17:19:46+07:00",
+        "AuthorName": "Artem Vozhzhov",
+        "AuthorEmail": "vojjov.artem@ya.ru",
+        "CommiterDate": "2026-07-08T17:22:02+07:00",
+        "CommiterName": "Artem Vozhzhov",
+        "CommiterEmail": "vojjov.artem@ya.ru",
+        "Parents": [
+          "81478b6f286df4bad01cbb8ff2c29258a5fbaea1"
+        ],
+        "Body": "chore(docs): added TODO section to README.md\n"
+      }
+    ]
+  }
+}

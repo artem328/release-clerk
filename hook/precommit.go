@@ -6,42 +6,37 @@ import (
 
 const TypePreCommit = "precommit"
 
-func init() {
-	inputPayloadRegistry[TypePreCommit] = func() InputPayload { return &PreCommitInput{} }
-	outputPayloadRegistry[TypePreCommit] = func() OutputPayload { return &PreCommitOutput{} }
-}
-
 type PreCommitInput struct {
 	DryRun     bool
 	NewVersion semver.Version
 	NewTag     string
 }
 
-func NewPrecommitInput(p PreCommitInput) Input {
-	return Input{
+func NewPrecommitInput(p PreCommitInput) Input[PreCommitInput] {
+	return Input[PreCommitInput]{
 		Type:    TypePreCommit,
-		Payload: new(p),
+		Payload: p,
 	}
 }
 
-func (PreCommitInput) isInputPayload() {}
+func (PreCommitInput) inputPayloadType() string { return TypePreCommit }
 
 type PreCommitOutput struct{}
 
-func NewPrecommitOutput(logs ...Log) Output {
-	return Output{
+func NewPrecommitOutput(logs ...Log) Output[PreCommitOutput] {
+	return Output[PreCommitOutput]{
 		Type:    TypePreCommit,
-		Payload: &PreCommitOutput{},
+		Payload: new(PreCommitOutput),
 		Logs:    logs,
 	}
 }
 
-func NewErrorPrecommitOutput(e Error, logs ...Log) Output {
-	return Output{
+func NewErrorPrecommitOutput(e Error, logs ...Log) Output[PreCommitOutput] {
+	return Output[PreCommitOutput]{
 		Type:  TypePreCommit,
 		Logs:  logs,
 		Error: new(e),
 	}
 }
 
-func (PreCommitOutput) isOutputPayload() {}
+func (PreCommitOutput) outputPayloadType() string { return TypePreCommit }

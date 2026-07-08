@@ -14,7 +14,7 @@ type Repo struct {
 }
 
 func LocateRepo(ctx context.Context) (*Repo, error) {
-	root, err := git(ctx, "rev-parse", "--show-toplevel")
+	root, err := runGit(ctx, "rev-parse", "--show-toplevel")
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func (r *Repo) Root() string {
 }
 
 func (r *Repo) Tags() ([]string, error) {
-	tagsList, err := git(r.ctx, "tag", "--list")
+	tagsList, err := runGit(r.ctx, "tag", "--list")
 	if err != nil {
 		return nil, nil
 	}
@@ -45,7 +45,7 @@ func (r *Repo) Tags() ([]string, error) {
 }
 
 func (r *Repo) CurrentBranch() (string, error) {
-	branch, err := git(r.ctx, "branch", "--show-current")
+	branch, err := runGit(r.ctx, "branch", "--show-current")
 	if err != nil {
 		return "", err
 	}
@@ -63,18 +63,18 @@ func (r *Repo) AddTag(tag, annotation string) error {
 		args = append(args, tag)
 	}
 
-	_, err := git(r.ctx, args...)
+	_, err := runGit(r.ctx, args...)
 
 	return err
 }
 
 func (r *Repo) Push(branch string) error {
-	_, err := git(r.ctx, "push", "origin", branch, "--follow-tags")
+	_, err := runGit(r.ctx, "push", "origin", branch, "--follow-tags")
 
 	return err
 }
 
-func git(ctx context.Context, args ...string) ([]byte, error) {
+func runGit(ctx context.Context, args ...string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, "git", args...)
 	stdout := bytes.NewBuffer(make([]byte, 0, 1024))
 	stderr := bytes.NewBuffer(make([]byte, 0, 1024))

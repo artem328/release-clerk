@@ -6,20 +6,11 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/artem328/release-clerk/git"
 )
 
-type Commit struct {
-	FullHash      string
-	ShortHash     string
-	AuthorDate    time.Time
-	AuthorName    string
-	AuthorEmail   string
-	CommiterDate  time.Time
-	CommiterName  string
-	CommiterEmail string
-	Parents       []string
-	Body          string
-}
+type Commit = git.Commit
 
 const (
 	commitFormatSeparator = "%x00"
@@ -79,13 +70,13 @@ func (r *Repo) GetCommit(ref string) (Commit, error) {
 }
 
 func (r *Repo) StageChanges() error {
-	_, err := git(r.ctx, "add", "-A")
+	_, err := runGit(r.ctx, "add", "-A")
 
 	return err
 }
 
 func (r *Repo) Commit(msg string) error {
-	_, err := git(r.ctx, "commit", "-m", msg)
+	_, err := runGit(r.ctx, "commit", "-m", msg)
 
 	return err
 }
@@ -93,7 +84,7 @@ func (r *Repo) Commit(msg string) error {
 func (r *Repo) log(args ...string) ([]Commit, error) {
 	args = append([]string{"log", "--format=" + commitFormatString}, args...)
 
-	rawCommitsList, err := git(r.ctx, args...)
+	rawCommitsList, err := runGit(r.ctx, args...)
 	if err != nil {
 		return nil, err
 	}

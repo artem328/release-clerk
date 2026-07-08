@@ -18,14 +18,14 @@ type Hook struct {
 	Args    []string
 }
 
-func Run(ctx context.Context, h Hook, i hook.Input) (hook.Output, error) {
+func Run[I hook.InputPayload, O hook.OutputPayload](ctx context.Context, h Hook, i hook.Input[I]) (hook.Output[O], error) {
 	cmd := exec.CommandContext(ctx, h.Command, h.Args...)
 	stderr := bytes.NewBuffer(make([]byte, 0, 1024))
 	stdout := bytes.NewBuffer(make([]byte, 0, 1024))
 
 	j, err := json.Marshal(i)
 	if err != nil {
-		return hook.Output{}, err
+		return hook.Output[O]{}, err
 	}
 
 	cmd.Stdin = bytes.NewBuffer(j)
@@ -33,21 +33,21 @@ func Run(ctx context.Context, h Hook, i hook.Input) (hook.Output, error) {
 	cmd.Stderr = stderr
 
 	if err := cmd.Run(); err != nil {
-		return hook.Output{}, err
+		return hook.Output[O]{}, err
 	}
 
 	if stdout.Len() == 0 {
-		return hook.Output{}, ErrNotHooked
+		return hook.Output[O]{}, ErrNotHooked
 	}
 
-	var o hook.Output
+	var o hook.Output[O]
 
 	if err := json.Unmarshal(stdout.Bytes(), &o); err != nil {
-		return hook.Output{}, err
+		return hook.Output[O]{}, err
 	}
 
 	if o.Type != i.Type {
-		return hook.Output{}, fmt.Errorf("hook responded with incorrect type %s, while expected %s", o.Type, i.Type)
+		return hook.Output[O]{}, fmt.Errorf("hook responded with incorrect type %s, while expected %s", o.Type, i.Type)
 	}
 
 	return o, o.Err()

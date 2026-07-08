@@ -125,6 +125,23 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (Re
 		return Release{}, err
 	}
 
+	if len(conf.Hooks) > 0 {
+		out, hooked, err := runHooks(ctx, conf.Hooks, hookmodel.NewCommitTransformInput(hookmodel.CommitTransformInput{
+			Commits: gitCommits,
+		}), func(o hookmodel.Output[hookmodel.CommitTransformOutput], l log.Logger) (hookmodel.Input[hookmodel.CommitTransformInput], error) {
+			return hookmodel.NewCommitTransformInput(hookmodel.CommitTransformInput{
+				Commits: o.Payload.Commits,
+			}), nil
+		}, l)
+		if err != nil {
+			return Release{}, err
+		}
+
+		if hooked > 0 {
+			gitCommits = out.Payload.Commits
+		}
+	}
+
 	commits := commit.FromGitCommits(gitCommits)
 
 	if !conf.IncludeMergeCommits {
@@ -206,14 +223,22 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (Re
 		cllog.Logf("Changelog write to %s is skipped due to dry-run", filename)
 	}
 
-	precommit := hookmodel.NewPrecommitInput(hookmodel.PreCommitInput{
-		DryRun:     dryRun,
-		NewVersion: newVersion,
-		NewTag:     newTag,
-	})
-
 	if len(conf.Hooks) > 0 {
-		_, _, err := runHooks(ctx, conf.Hooks, precommit, func(o hookmodel.Output, l log.Logger) hookmodel.Input { return precommit }, l)
+		precommit := hookmodel.NewPrecommitInput(hookmodel.PreCommitInput{
+			DryRun:     dryRun,
+			NewVersion: newVersion,
+			NewTag:     newTag,
+		})
+
+		_, _, err := runHooks(
+			ctx,
+			conf.Hooks,
+			precommit,
+			func(o hookmodel.Output[hookmodel.PreCommitOutput], l log.Logger) (hookmodel.Input[hookmodel.PreCommitInput], error) {
+				return precommit, nil
+			},
+			l,
+		)
 		if err != nil {
 			return Release{}, err
 		}
@@ -365,13 +390,13 @@ func writeChangelog(file string, changelog string) error {
 
 var errHookFailed = errors.New("hook failed")
 
-func runHooks(
+func runHooks[I hookmodel.InputPayload, O hookmodel.OutputPayload](
 	ctx context.Context,
 	hooks []config.Hook,
-	i hookmodel.Input,
-	processor func(hookmodel.Output, log.Logger) hookmodel.Input,
+	i hookmodel.Input[I],
+	processor func(hookmodel.Output[O], log.Logger) (hookmodel.Input[I], error),
 	l log.Logger,
-) (out hookmodel.Output, hooked int, err error) {
+) (out hookmodel.Output[O], hooked int, err error) {
 	l = l.Section("hook." + i.Type)
 	l.Log("Running hooks")
 
@@ -389,10 +414,12 @@ func runHooks(
 
 		hl.Debugf("Starting hook. cmd: %s args: %s", h.Command, h.Args)
 
-		out, err = hook.Run(ctx, hh, i)
+		o, err := hook.Run[I, O](ctx, hh, i)
 		if errors.Is(err, hook.ErrNotHooked) {
 			continue
 		}
+
+		out = o
 
 		for _, ll := range out.Logs {
 			if ll.Debug {
@@ -405,10 +432,15 @@ func runHooks(
 		if err != nil {
 			hl.Logf("Hook finished with error: %s", err.Error())
 
-			return hookmodel.Output{}, 0, errHookFailed
+			return hookmodel.Output[O]{}, 0, errHookFailed
 		}
 
-		i = processor(out, l)
+		i, err = processor(out, l)
+		if err != nil {
+			hl.Logf("Failed to process hook output: %s", err.Error())
+
+			return hookmodel.Output[O]{}, 0, errHookFailed
+		}
 
 		hooked++
 		hl.Debug("Finished hook")

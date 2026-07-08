@@ -2,17 +2,17 @@ package hook
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 )
 
-var inputPayloadRegistry = make(map[string]func() InputPayload)
+var ErrInputTypeMismatch = errors.New("input type mismatch")
 
-type Input struct {
+type Input[P InputPayload] struct {
 	Type    string
-	Payload InputPayload
+	Payload P
 }
 
-func (i *Input) UnmarshalJSON(data []byte) error {
+func (i *Input[P]) UnmarshalJSON(data []byte) error {
 	var in struct {
 		Type    string
 		Payload json.RawMessage
@@ -22,13 +22,11 @@ func (i *Input) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	constr, ok := inputPayloadRegistry[in.Type]
-	if !ok {
-		return fmt.Errorf("hook `%s` is not registered", in.Type)
+	if i.Payload.inputPayloadType() != in.Type {
+		return ErrInputTypeMismatch
 	}
 
 	i.Type = in.Type
-	i.Payload = constr()
 
 	if err := json.Unmarshal(in.Payload, &i.Payload); err != nil {
 		return err
@@ -38,11 +36,5 @@ func (i *Input) UnmarshalJSON(data []byte) error {
 }
 
 type InputPayload interface {
-	isInputPayload()
-}
-
-func AsInputPayload[P InputPayload](p InputPayload) (P, bool) {
-	pp, ok := p.(P)
-
-	return pp, ok
+	inputPayloadType() string
 }

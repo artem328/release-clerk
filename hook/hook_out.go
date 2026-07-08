@@ -2,10 +2,10 @@ package hook
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 )
 
-var outputPayloadRegistry = make(map[string]func() OutputPayload)
+var ErrOutputTypeMismatch = errors.New("output type mismatch")
 
 type Error struct {
 	Message string
@@ -20,21 +20,21 @@ type Log struct {
 	Debug   bool
 }
 
-type Output struct {
+type Output[P OutputPayload] struct {
 	Type    string
 	Logs    []Log
-	Error   *Error        `json:",omitempty"`
-	Payload OutputPayload `json:",omitempty"`
+	Error   *Error `json:",omitempty"`
+	Payload *P     `json:",omitempty"`
 }
 
-func (o Output) Err() error {
+func (o Output[P]) Err() error {
 	if o.Error == nil {
 		return nil
 	}
 	return o.Error
 }
 
-func (o *Output) UnmarshalJSON(data []byte) error {
+func (o *Output[P]) UnmarshalJSON(data []byte) error {
 	var out struct {
 		Type    string
 		Logs    []Log
@@ -46,29 +46,24 @@ func (o *Output) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	constr, ok := outputPayloadRegistry[out.Type]
-	if !ok {
-		return fmt.Errorf("hook `%s` is not registered", out.Type)
+	p := new(P)
+	if (*p).outputPayloadType() != out.Type {
+		return ErrOutputTypeMismatch
 	}
 
 	o.Type = out.Type
 	o.Logs = out.Logs
 	o.Error = out.Error
-	o.Payload = constr()
 
 	if len(out.Payload) == 0 {
 		return nil
 	}
 
+	o.Payload = p
+
 	return json.Unmarshal(out.Payload, &o.Payload)
 }
 
 type OutputPayload interface {
-	isOutputPayload()
-}
-
-func AsOutputPayload[P OutputPayload](p OutputPayload) (P, bool) {
-	pp, ok := p.(P)
-
-	return pp, ok
+	outputPayloadType() string
 }
