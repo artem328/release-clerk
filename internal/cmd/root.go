@@ -13,12 +13,14 @@ var globalFlags = struct {
 }{}
 
 var rootCmd = &cobra.Command{
-	Use:   "release-clerk",
-	Short: "Release CLI",
+	Use:           "release-clerk",
+	Short:         "Release CLI",
+	SilenceErrors: true,
+	SilenceUsage:  true,
 }
 
-func Execute(ctx context.Context) error {
-	return rootCmd.ExecuteContext(ctx)
+func Execute(ctx context.Context) (*cobra.Command, error) {
+	return rootCmd.ExecuteContextC(ctx)
 }
 
 func init() {

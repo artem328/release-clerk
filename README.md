@@ -9,5 +9,5 @@ A tool to tag a new version based on the conventional commits history
 - [x] add parents field to commit
 - [x] add an option to exclude merge commits (parents > 1) (opt-out)
 - [ ] add colored output
-- [ ] add lint command (should accept git pathspec and utilize commit transform hook before validation) 
+- [x] add lint command (should accept git pathspec and utilize commit transform hook before validation) 
       that fails on invalid conventional commit

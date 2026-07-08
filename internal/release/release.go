@@ -6,7 +6,6 @@ import (
 	"errors"
 	"os"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
@@ -125,37 +124,25 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (Re
 		return Release{}, err
 	}
 
-	if len(conf.Hooks) > 0 {
-		out, hooked, err := runHooks(ctx, conf.Hooks, hookmodel.NewCommitTransformInput(hookmodel.CommitTransformInput{
-			Commits: gitCommits,
-		}), func(o hookmodel.Output[hookmodel.CommitTransformOutput], l log.Logger) (hookmodel.Input[hookmodel.CommitTransformInput], error) {
-			return hookmodel.NewCommitTransformInput(hookmodel.CommitTransformInput{
-				Commits: o.Payload.Commits,
-			}), nil
-		}, l)
-		if err != nil {
-			return Release{}, err
-		}
+	out, hooked, err := hook.RunHooks(ctx, conf.Hooks, hookmodel.NewCommitTransformInput(hookmodel.CommitTransformInput{
+		Commits: gitCommits,
+	}), func(o hookmodel.Output[hookmodel.CommitTransformOutput], l log.Logger) (hookmodel.Input[hookmodel.CommitTransformInput], error) {
+		return hookmodel.NewCommitTransformInput(hookmodel.CommitTransformInput{
+			Commits: o.Payload.Commits,
+		}), nil
+	}, l)
+	if err != nil {
+		return Release{}, err
+	}
 
-		if hooked > 0 {
-			gitCommits = out.Payload.Commits
-		}
+	if hooked > 0 {
+		gitCommits = out.Payload.Commits
 	}
 
 	commits := commit.FromGitCommits(gitCommits)
 
 	if !conf.IncludeMergeCommits {
-		var i, j int
-
-		for i = 0; i < len(commits); i++ {
-			if len(commits[i].Git.Parents) > 1 {
-				continue
-			}
-
-			commits[j] = commits[i]
-			j++
-		}
-		commits = commits[:j]
+		commits = commit.FilterOutMergeCommits(commits)
 	}
 
 	clog := l.Section("commits")
@@ -223,25 +210,23 @@ func Run(ctx context.Context, conf config.Config, dryRun bool, l log.Logger) (Re
 		cllog.Logf("Changelog write to %s is skipped due to dry-run", filename)
 	}
 
-	if len(conf.Hooks) > 0 {
-		precommit := hookmodel.NewPrecommitInput(hookmodel.PreCommitInput{
-			DryRun:     dryRun,
-			NewVersion: newVersion,
-			NewTag:     newTag,
-		})
+	precommit := hookmodel.NewPrecommitInput(hookmodel.PreCommitInput{
+		DryRun:     dryRun,
+		NewVersion: newVersion,
+		NewTag:     newTag,
+	})
 
-		_, _, err := runHooks(
-			ctx,
-			conf.Hooks,
-			precommit,
-			func(o hookmodel.Output[hookmodel.PreCommitOutput], l log.Logger) (hookmodel.Input[hookmodel.PreCommitInput], error) {
-				return precommit, nil
-			},
-			l,
-		)
-		if err != nil {
-			return Release{}, err
-		}
+	_, _, err = hook.RunHooks(
+		ctx,
+		conf.Hooks,
+		precommit,
+		func(o hookmodel.Output[hookmodel.PreCommitOutput], l log.Logger) (hookmodel.Input[hookmodel.PreCommitInput], error) {
+			return precommit, nil
+		},
+		l,
+	)
+	if err != nil {
+		return Release{}, err
 	}
 
 	commlog := l.Section("commit")
@@ -386,65 +371,4 @@ func writeChangelog(file string, changelog string) error {
 	data = append(data, current...)
 
 	return os.WriteFile(file, data, 0644)
-}
-
-var errHookFailed = errors.New("hook failed")
-
-func runHooks[I hookmodel.InputPayload, O hookmodel.OutputPayload](
-	ctx context.Context,
-	hooks []config.Hook,
-	i hookmodel.Input[I],
-	processor func(hookmodel.Output[O], log.Logger) (hookmodel.Input[I], error),
-	l log.Logger,
-) (out hookmodel.Output[O], hooked int, err error) {
-	l = l.Section("hook." + i.Type)
-	l.Log("Running hooks")
-
-	for j, h := range hooks {
-		name := h.Name
-		if name == "" {
-			name = "hook#" + strconv.Itoa(j)
-		}
-
-		hh := hook.Hook{
-			Command: h.Command,
-			Args:    h.Args,
-		}
-		hl := l.Section(name)
-
-		hl.Debugf("Starting hook. cmd: %s args: %s", h.Command, h.Args)
-
-		o, err := hook.Run[I, O](ctx, hh, i)
-		if errors.Is(err, hook.ErrNotHooked) {
-			continue
-		}
-
-		out = o
-
-		for _, ll := range out.Logs {
-			if ll.Debug {
-				hl.Debug(ll.Message)
-			} else {
-				hl.Log(ll.Message)
-			}
-		}
-
-		if err != nil {
-			hl.Logf("Hook finished with error: %s", err.Error())
-
-			return hookmodel.Output[O]{}, 0, errHookFailed
-		}
-
-		i, err = processor(out, l)
-		if err != nil {
-			hl.Logf("Failed to process hook output: %s", err.Error())
-
-			return hookmodel.Output[O]{}, 0, errHookFailed
-		}
-
-		hooked++
-		hl.Debug("Finished hook")
-	}
-
-	return out, hooked, nil
 }

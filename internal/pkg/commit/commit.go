@@ -1,7 +1,7 @@
 package commit
 
 import (
-	"github.com/artem328/release-clerk/internal/pkg/git"
+	"github.com/artem328/release-clerk/git"
 	"github.com/artem328/release-clerk/pkg/conventionalcommit"
 )
 
@@ -25,4 +25,19 @@ func FromGitCommits(cc []git.Commit) []Commit {
 	}
 
 	return commits
+}
+
+func FilterOutMergeCommits(commits []Commit) []Commit {
+	var i, j int
+
+	for i = 0; i < len(commits); i++ {
+		if len(commits[i].Git.Parents) > 1 {
+			continue
+		}
+
+		commits[j] = commits[i]
+		j++
+	}
+
+	return commits[:j]
 }
