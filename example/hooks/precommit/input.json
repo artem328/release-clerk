@@ -1,6 +1,7 @@
 {
   "Type": "precommit",
   "Payload": {
+    "DryRun": false,
     "NewVersion": {
       "String": "1.2.3",
       "Version": {
