@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.3.0 (2026-07-08)
+
+### BREAKING CHANGE
+
+* ! **tag**: add `Valid` field to tag json output (6d618ca)
+
 ## 0.2.0 (2026-07-07)
 
 ### Features
