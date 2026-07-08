@@ -11,8 +11,9 @@ import (
 )
 
 var releaseCmdFlags = struct {
-	DryRun bool
-	Format string
+	DryRun      bool
+	DisablePush bool
+	Format      string
 }{}
 
 var releaseCmd = &cobra.Command{
@@ -22,6 +23,10 @@ var releaseCmd = &cobra.Command{
 		conf, err := loadConfig()
 		if err != nil {
 			return err
+		}
+
+		if cmd.Flags().Changed("disable-push") {
+			conf.DisablePush = releaseCmdFlags.DisablePush
 		}
 
 		logger := log.NewGenericLogger(os.Stderr, "", globalFlags.Debug)
@@ -59,6 +64,12 @@ func init() {
 		"dry-run",
 		false,
 		"Don't apply any changes, just show what would be done",
+	)
+	releaseCmd.Flags().BoolVar(
+		&releaseCmdFlags.DisablePush,
+		"disable-push",
+		false,
+		"Don't push any changes. Commit and tag will be still created",
 	)
 	releaseCmd.Flags().StringVarP(&releaseCmdFlags.Format, "format", "f", "text", "Format to output (json|text)")
 
