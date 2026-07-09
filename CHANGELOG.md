@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.4.1 (2026-07-09)
+
+### Fixes
+
+* **changelog**: added commits processing within changelog command (745df88)
+
 ## 0.4.0 (2026-07-08)
 
 ### BREAKING CHANGE
