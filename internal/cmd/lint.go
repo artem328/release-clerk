@@ -15,10 +15,9 @@ var lintFlags = struct {
 }{}
 
 var lintCmd = &cobra.Command{
-	Use:       "lint <pathspec>",
-	Short:     "Lint commits within pathspec range",
-	Args:      cobra.ExactArgs(1),
-	ValidArgs: []string{"pathspec"},
+	Use:   "lint <pathspec>",
+	Short: "Lint commits within pathspec range",
+	Args:  argsWrapper(cobra.ExactArgs(1)),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		conf, err := loadConfig()
 		if err != nil {

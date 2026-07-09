@@ -39,3 +39,15 @@ func (e UsageError) Error() string {
 func (e UsageError) Unwrap() error {
 	return e.Err
 }
+
+type ArgsError struct {
+	Err error
+}
+
+func (e ArgsError) Error() string {
+	return e.Err.Error()
+}
+
+func (e ArgsError) Unwrap() error {
+	return e.Err
+}

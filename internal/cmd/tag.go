@@ -26,7 +26,7 @@ type tagOut struct {
 var tagCmd = &cobra.Command{
 	Use:   "tag <tag>",
 	Short: "Display version information for tag",
-	Args:  cobra.ExactArgs(1),
+	Args:  argsWrapper(cobra.ExactArgs(1)),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		conf, err := loadConfig()
 		if err != nil {

@@ -41,3 +41,13 @@ func loadConfig() (config.Config, error) {
 
 	return config.Discover()
 }
+
+func argsWrapper(pa cobra.PositionalArgs) cobra.PositionalArgs {
+	return func(cmd *cobra.Command, args []string) error {
+		if err := pa(cmd, args); err != nil {
+			return ArgsError{Err: err}
+		}
+
+		return nil
+	}
+}

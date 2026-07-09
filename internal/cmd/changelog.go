@@ -16,6 +16,7 @@ var changelogFlags = struct {
 var changelogCmd = &cobra.Command{
 	Use:   "changelog",
 	Short: "Generates changelog for version",
+	Args:  argsWrapper(cobra.NoArgs),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		conf, err := loadConfig()
 		if err != nil {

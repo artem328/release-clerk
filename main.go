@@ -10,6 +10,7 @@ import (
 
 	"github.com/artem328/release-clerk/internal/cmd"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 type executionResult struct {
@@ -65,6 +66,12 @@ func handleResult(res executionResult) {
 
 ErrorLoop:
 	for err != nil {
+		if isCobraSyntaxError(err) {
+			reportErr = err
+			showUsage = true
+			break ErrorLoop
+		}
+
 		switch e := err.(type) {
 		case cmd.CodeError:
 			err = e.Unwrap()
@@ -104,4 +111,16 @@ ErrorLoop:
 	}
 
 	os.Exit(code)
+}
+
+func isCobraSyntaxError(err error) bool {
+	if _, ok := errors.AsType[*pflag.NotExistError](err); ok {
+		return true
+	}
+
+	if _, ok := errors.AsType[cmd.ArgsError](err); ok {
+		return true
+	}
+
+	return false
 }

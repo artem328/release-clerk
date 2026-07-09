@@ -19,6 +19,7 @@ var releaseCmdFlags = struct {
 var releaseCmd = &cobra.Command{
 	Use:   "release",
 	Short: "Create a release",
+	Args:  argsWrapper(cobra.NoArgs),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		conf, err := loadConfig()
 		if err != nil {
