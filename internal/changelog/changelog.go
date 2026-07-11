@@ -53,8 +53,6 @@ func GenerateForRepo(ctx context.Context, repo *git.Repo, conf config.Config, ge
 		return "", err
 	}
 
-	commits := commit.FromGitCommits(gitCommits)
-
 	out, hooked, err := hook.RunHooks(ctx, conf.Hooks, hookmodel.NewCommitTransformInput(hookmodel.CommitTransformInput{
 		Commits: gitCommits,
 	}), func(o hookmodel.Output[hookmodel.CommitTransformOutput], l log.Logger) (hookmodel.Input[hookmodel.CommitTransformInput], error) {
@@ -69,6 +67,8 @@ func GenerateForRepo(ctx context.Context, repo *git.Repo, conf config.Config, ge
 	if hooked > 0 {
 		gitCommits = out.Payload.Commits
 	}
+
+	commits := commit.FromGitCommits(gitCommits)
 
 	if !conf.IncludeMergeCommits {
 		commits = commit.FilterOutMergeCommits(commits)
