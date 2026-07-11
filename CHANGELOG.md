@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.4.2 (2026-07-11)
+
+### Fixes
+
+* **changelog**: fixed commit transformation order (66d6f2f)
+
 ## 0.4.1 (2026-07-09)
 
 ### Fixes
